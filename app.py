@@ -25,13 +25,10 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Title and intro
-st.title("🧹 Data Cleaner")
+st.title("Data Cleaner")
 st.markdown("**Welcome!** Upload a CSV file (like a spreadsheet), and I’ll help clean it up by fixing duplicates and missing values. You can then download the tidy version!")
 
-# Explain what a CSV is
-st.markdown("<div class='explain'>", unsafe_allow_html=True)
-st.write("**What’s a CSV?** It’s a simple file (like ‘sales.csv’) with rows and columns, e.g., ‘Date, Amount, Product’ for sales data. If it’s messy—duplicate rows or blank spots—we’ll fix it!")
-st.markdown("</div>", unsafe_allow_html=True)
+
 
 # File uploader
 uploaded_file = st.file_uploader("Step 1: Upload Your CSV File", type=["csv"], help="Pick a CSV file from your computer to clean")
