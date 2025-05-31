@@ -3,6 +3,7 @@ import os
 from datetime import datetime
 import urllib.parse
 import webbrowser
+import platform
 
 # Set page config for a better look
 st.set_page_config(page_title="Folder & Doc Creator", page_icon="📁", layout="wide")
@@ -64,6 +65,7 @@ if st.button("Create & Generate Link"):
             st.write(f"Folder to create: {new_folder_path}")
             st.write(f"Base directory exists: {os.path.exists(base_dir)}")
             st.write(f"Write permission for base: {os.access(base_dir, os.W_OK)}")
+            st.write(f"System: {platform.system()} {platform.release()}")
             st.markdown("</div>", unsafe_allow_html=True)
 
         # Check if folder exists and handle overwrite
@@ -76,6 +78,8 @@ if st.button("Create & Generate Link"):
         # Verify folder creation
         if not os.path.exists(new_folder_path):
             raise RuntimeError(f"Failed to create folder '{new_folder_path}'")
+        if not os.access(new_folder_path, os.W_OK):
+            raise PermissionError(f"No write permission for new folder '{new_folder_path}'")
         
         # Parse document names from text area
         doc_list = [name.strip() for name in doc_names.split("\n") if name.strip()]
@@ -130,15 +134,19 @@ if st.button("Create & Generate Link"):
             for item in actual_contents:
                 st.write(f"- {item}")
         else:
-            st.write("Warning: Folder appears empty!")
+            st.write("Warning: Folder appears empty! Check permissions or path.")
         st.markdown(f"**Shareable Link**: <a href='{file_url}' target='_blank'>{file_url}</a>", unsafe_allow_html=True)
-        st.write("Note: The file:// link opens the folder locally. If it doesn’t work, copy the link, paste it into File Explorer, or upload to a cloud service (e.g., Google Drive, Dropbox) for remote sharing.")
+        st.write("Note: The file:// link opens the folder locally. If it doesn’t work, copy the link, paste into File Explorer’s address bar, or use the button below.")
         
         # Button to attempt opening the folder
         if st.button("Open Folder in File Explorer"):
             try:
-                webbrowser.open(f"file:///{new_folder_path}")
-                st.write("Attempted to open the folder. Check if File Explorer opened!")
+                if platform.system() == "Windows":
+                    os.startfile(new_folder_path)  # Windows-specific, opens in File Explorer
+                    st.write("Attempted to open the folder in File Explorer. Check if it opened!")
+                else:
+                    webbrowser.open(f"file:///{new_folder_path}")
+                    st.write("Attempted to open the folder. Check if your file manager opened! (Non-Windows system detected)")
             except Exception as e:
                 st.markdown(f"<div class='status-box error'>Failed to open folder: {str(e)}</div>", unsafe_allow_html=True)
         
@@ -150,4 +158,4 @@ if st.button("Create & Generate Link"):
 
 # Footer
 st.markdown("---")
-st.write("**Note:** Ensure the base directory exists and you have write permissions. Check 'Debug Info' for troubleshooting. Current time: 11:28 AM PDT, May 31, 2025.")
+st.write("**Note:** Ensure the base directory exists and you have write permissions. Run the terminal as administrator if needed. Check 'Debug Info' for troubleshooting. Current time: 11:30 AM PDT, May 31, 2025.")
