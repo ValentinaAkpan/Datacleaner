@@ -20,6 +20,7 @@ st.markdown("""
     .error { background-color: #f8d7da; color: #721c24; }
     .debug { background-color: #fff3cd; color: #856404; padding: 10px; border-radius: 5px; }
     .explain { background-color: #e9f5ff; color: #1c2526; padding: 10px; border-radius: 5px; }
+    .warning { background-color: #fff3cd; color: #856404; padding: 10px; border-radius: 5px; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -52,6 +53,11 @@ if uploaded_file:
         st.markdown("</div>", unsafe_allow_html=True)
         st.dataframe(st.session_state.df.head())
         st.write(f"Rows: {st.session_state.df.shape[0]} (entries), Columns: {st.session_state.df.shape[1]} (fields)")
+        st.markdown("<div class='explain'>", unsafe_allow_html=True)
+        st.write("**Check for Blanks**: Here’s where your data has missing values (blank spots) before cleaning:")
+        st.markdown("</div>", unsafe_allow_html=True)
+        st.dataframe(st.session_state.df[st.session_state.df.isnull().any(axis=1)].head())
+        st.write(f"Rows with at least one blank: {st.session_state.df.isnull().any(axis=1).sum()}")
     except Exception as e:
         st.markdown(f"<div class='status-box error'>Oops! Couldn’t load the file: {str(e)}</div>", unsafe_allow_html=True)
 
@@ -75,6 +81,10 @@ if st.session_state.df is not None:
         debug_mode = st.checkbox(
             "Show Me the Details", value=True, 
             help="Check this to see extra info, like how many duplicates I found or how many blanks were fixed"
+        )
+        drop_proceed = st.checkbox(
+            "Proceed if Dropping Rows Empties Data", value=False,
+            help="If ‘Drop Rows’ removes all rows (e.g., every row has a blank), check this to continue anyway"
         )
 
     # Button to clean data
@@ -125,17 +135,23 @@ if st.session_state.df is not None:
                     st.markdown("</div>", unsafe_allow_html=True)
                 elif fill_method == "Drop Rows":
                     initial_rows = cleaned_df.shape[0]
-                    cleaned_df = cleaned_df.dropna()
-                    removed = initial_rows - cleaned_df.shape[0]
-                    st.markdown("<div class='explain'>", unsafe_allow_html=True)
-                    st.write(f"**Choice: Drop Rows** I removed {removed} rows that had any blank values. This keeps only complete data!")
-                    st.markdown("</div>", unsafe_allow_html=True)
-                    if debug_mode:
-                        st.markdown("<div class='debug'>", unsafe_allow_html=True)
-                        st.write(f"Rows dropped due to missing values: {removed}")
+                    rows_to_drop = cleaned_df.isnull().any(axis=1).sum()
+                    if rows_to_drop == initial_rows and not drop_proceed:
+                        st.markdown("<div class='warning'>", unsafe_allow_html=True)
+                        st.write(f"**Warning!** I found {rows_to_drop} rows with blanks. Dropping them would leave NO data! Check ‘Proceed if Dropping Rows Empties Data’ to continue, or pick another option like ‘Fill with 0’.")
                         st.markdown("</div>", unsafe_allow_html=True)
+                    else:
+                        cleaned_df = cleaned_df.dropna()
+                        removed = initial_rows - cleaned_df.shape[0]
+                        st.markdown("<div class='explain'>", unsafe_allow_html=True)
+                        st.write(f"**Choice: Drop Rows** I removed {removed} rows that had any blank values. This keeps only complete data! If the result is empty, it means every row had a blank.")
+                        st.markdown("</div>", unsafe_allow_html=True)
+                        if debug_mode:
+                            st.markdown("<div class='debug'>", unsafe_allow_html=True)
+                            st.write(f"Rows dropped due to missing values: {removed}")
+                            st.markdown("</div>", unsafe_allow_html=True)
                 
-                if debug_mode:
+                if debug_mode and fill_method != "Drop Rows" or (fill_method == "Drop Rows" and (drop_proceed or rows_to_drop < initial_rows)):
                     st.markdown("<div class='debug'>", unsafe_allow_html=True)
                     st.write("Missing values after cleaning (blanks per column):")
                     st.write(cleaned_df.isnull().sum())
@@ -173,4 +189,4 @@ if st.session_state.df is not None:
 
 # Footer
 st.markdown("---")
-st.write("**Note:** Start by uploading a CSV file. Pick cleaning options to fix duplicates or missing values. Follow the steps and check explanations! Current time: 11:43 AM PDT, May 31, 2025.")
+st.write("**Note:** Start by uploading a CSV file. Pick cleaning options to fix duplicates or missing values. Watch for warnings if dropping rows empties your data! Current time: 11:46 AM PDT, May 31, 2025.")
