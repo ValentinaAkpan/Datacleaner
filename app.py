@@ -2,6 +2,7 @@ import streamlit as st
 import os
 from datetime import datetime
 import urllib.parse
+import webbrowser
 
 # Set page config for a better look
 st.set_page_config(page_title="Folder & Doc Creator", page_icon="📁", layout="wide")
@@ -106,23 +107,41 @@ if st.button("Create & Generate Link"):
             progress += 1
             progress_bar.progress(min(progress / total_items, 1.0))
         
-        # Verify created files
+        # Verify created files and list folder contents
         missing_files = [doc for doc in created_files if not os.path.exists(os.path.join(new_folder_path, doc))]
         if missing_files:
             raise RuntimeError(f"Failed to create files: {', '.join(missing_files)}")
         
+        # Scan folder for actual contents
+        actual_contents = os.listdir(new_folder_path)
+        
         # Generate file:// link
-        file_url = f"file://{urllib.parse.quote(new_folder_path.replace(os.sep, '/'))}"
+        file_url = f"file:///{urllib.parse.quote(new_folder_path.replace(os.sep, '/'))}"
         
         # Display success
         st.markdown(f"<div class='status-box success'>Success! Folder and documents created!</div>", unsafe_allow_html=True)
         st.subheader("Created Items")
         st.write(f"**Folder**: {new_folder_path}")
-        st.write("**Documents**:")
+        st.write("**Expected Documents**:")
         for file in created_files:
             st.write(f"✓ {file}")
+        st.write("**Actual Contents in Folder**:")
+        if actual_contents:
+            for item in actual_contents:
+                st.write(f"- {item}")
+        else:
+            st.write("Warning: Folder appears empty!")
         st.markdown(f"**Shareable Link**: <a href='{file_url}' target='_blank'>{file_url}</a>", unsafe_allow_html=True)
-        st.write("Note: The file:// link works locally. For remote sharing, upload to a cloud service (e.g., Google Drive, Dropbox).")
+        st.write("Note: The file:// link opens the folder locally. If it doesn’t work, copy the link, paste it into File Explorer, or upload to a cloud service (e.g., Google Drive, Dropbox) for remote sharing.")
+        
+        # Button to attempt opening the folder
+        if st.button("Open Folder in File Explorer"):
+            try:
+                webbrowser.open(f"file:///{new_folder_path}")
+                st.write("Attempted to open the folder. Check if File Explorer opened!")
+            except Exception as e:
+                st.markdown(f"<div class='status-box error'>Failed to open folder: {str(e)}</div>", unsafe_allow_html=True)
+        
         st.balloons()
 
     except Exception as e:
@@ -131,4 +150,4 @@ if st.button("Create & Generate Link"):
 
 # Footer
 st.markdown("---")
-st.write("**Note:** Ensure the base directory exists and you have write permissions. Check 'Debug Info' for troubleshooting. Current time: 11:26 AM PDT, May 31, 2025.")
+st.write("**Note:** Ensure the base directory exists and you have write permissions. Check 'Debug Info' for troubleshooting. Current time: 11:28 AM PDT, May 31, 2025.")
