@@ -23,7 +23,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # App title and description
-st.title("🧹 Data Cleaner")
+st.title("Data Cleaner")
 st.markdown("Upload a CSV file, clean it (remove duplicates, handle missing values), and download the result!")
 
 # File uploader
